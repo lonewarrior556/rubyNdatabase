@@ -13,7 +13,7 @@ class QuestionLike
   end
 
   def self.likers_for_question_id(question_id)
-    attrs = QuestionsDatabase.instance.execute(<<-SQL, id)
+    attrs = QuestionsDatabase.instance.execute(<<-SQL, question_id)
       SELECT
         users.*
       FROM
@@ -25,6 +25,55 @@ class QuestionLike
 
     SQL
     attrs.map{ |attr| User.new(attr)}
+  end
+
+  def self.num_likes_for_question_id(question_id)
+    some_variable= QuestionsDatabase.instance.execute(<<-SQL, question_id)
+      SELECT
+        COUNT(users.id)
+      FROM
+        question_likes
+      JOIN
+        users ON users.id = question_likes.user_id
+      WHERE
+        question_likes.question_id = ?
+      GROUP BY
+        question_likes.question_id
+    SQL
+    some_variable[0].values[0]
+  end
+
+  def self.liked_questions_for_user_id(user_id)
+    attrs = QuestionsDatabase.instance.execute(<<-SQL, user_id)
+      SELECT
+        questions.*
+      FROM
+        question_likes
+      JOIN
+        questions ON question_likes.question_id = questions.id
+      WHERE
+        question_likes.user_id = ?
+    SQL
+    attrs.map{ |attr| Question.new(attr)}
+  end
+
+
+  def self.most_liked_questions(n)
+    attrs = QuestionsDatabase.instance.execute(<<-SQL, n)
+      SELECT
+        questions.*
+      FROM
+        question_likes
+      JOIN
+        questions ON question_likes.question_id = questions.id
+      GROUP BY
+        question_id
+      ORDER BY
+        COUNT(question_id) DESC
+      LIMIT
+        ?
+    SQL
+    attrs.map{ |attr| Question.new(attr) }
   end
 
 

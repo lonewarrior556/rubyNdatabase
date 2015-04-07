@@ -9,7 +9,7 @@ require_relative 'questionlike'
 
 
 class QuestionsDatabase < SQLite3::Database
-  include Singleton
+  #include Singleton
 
   def initialize
     super('questions.db')

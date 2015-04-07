@@ -38,8 +38,8 @@ class Reply
     SQL
     attrs.map{|attr| Reply.new(attr) }
   end
-
   # id question_id reply_id, user_id, body
+
   def initialize(hash = {})
     @id = hash['id']
     @question_id = hash['question_id']
@@ -73,7 +73,29 @@ class Reply
     SQL
     attrs.map{|attr| Reply.new(attr) }
   end
+  # id question_id reply_id, user_id, body
 
+  def save
+    raise 'Replies need an author and question' if question_id.nil? || user_id.nil?
+    if self.id.nil?
+      QuestionsDatabase.instance.execute(<<-SQL, question_id, reply_id, user_id, body)
+        INSERT INTO
+          replies( question_id, reply_id, user_id, body)
+        VALUES
+          (?,?,?,?)
+      SQL
+      @id = QuestionsDatabase.instance.last_insert_row_id
+    else
+      QuestionsDatabase.instance.execute(<<-SQL, question_id, reply_id, user_id, body, id)
+        UPDATE
+          replies
+        SET
+          question_id = ?, reply_id = ?, user_id = ?, body = ?
+        WHERE
+          id = ?
+      SQL
+    end
+  end
 
 
 end

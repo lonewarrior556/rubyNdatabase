@@ -3,7 +3,7 @@ class User
   attr_reader :id
 
   def self.find_by_id(id)
-    attr = QuestionsDatabase.instance.execute(<<-SQL, id)
+    attrs = QuestionsDatabase.instance.execute(<<-SQL, id)
       SELECT
         *
       FROM
@@ -11,11 +11,11 @@ class User
       WHERE
         id = ?
     SQL
-    User.new(*attr)
+    User.new(*attrs)
   end
 
   def self.find_by_fname(fname)
-    attr = QuestionsDatabase.instance.execute(<<-SQL, fname)
+    attrs = QuestionsDatabase.instance.execute(<<-SQL, fname)
       SELECT
         *
       FROM
@@ -23,7 +23,7 @@ class User
       WHERE
         fname = ?
     SQL
-    User.new(*attr)
+    User.new(*attrs)
   end
 
   #id, fname, lname
@@ -45,5 +45,61 @@ class User
     QuestionFollow.followed_questions_for_user_id(id)
   end
 
+  def liked_questions
+    QuestionLike.liked_questions_for_user_id(id)
+  end
 
+  def average_karma
+    attrs = QuestionsDatabase.instance.execute(<<-SQL, id)
+      SELECT
+        questions.*
+      FROM
+        questions
+      LEFT OUTER JOIN
+        question_likes ON questions.id = question_likes.question_id
+      WHERE
+        questions.user_id = ?
+    SQL
+
+    attrs.length / authored_questions.length.to_f
+  end
+
+  def save
+    if self.id.nil?
+      QuestionsDatabase.instance.execute(<<-SQL, fname,lname )
+        INSERT INTO
+          users(fname, lname)
+        VALUES
+          (?,?)
+      SQL
+      @id = QuestionsDatabase.instance.last_insert_row_id
+    else
+      QuestionsDatabase.instance.execute(<<-SQL, fname, lname, id )
+        UPDATE
+          users
+        SET
+          fname = ?, lname = ?
+        WHERE
+          id = ?
+      SQL
+    end
+  end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#moar space
